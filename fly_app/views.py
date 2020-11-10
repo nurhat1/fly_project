@@ -5,6 +5,7 @@ from django.views.decorators.cache import cache_page
 import datetime
 import requests
 import pprint
+import time
 
 # Create your views here.
 
@@ -123,6 +124,7 @@ def home(request):
 
 
 def cheap_tickets_calendar(request):
+    """ Веб-сервис, который выводит самый дешевый билет за текущий месяц по заданному направлению """
 
     # dictionary that will have all necessary data to show to the users
     ticket_data = {}
@@ -145,11 +147,11 @@ def cheap_tickets_calendar(request):
         if r.status_code == 200:
             # get data from response
             dir_data = r.json()['data']
-            print("--------- dir_data ------------")
-            pprint.pprint(dir_data)
-            print("---------------------")
+            # print("--------- dir_data ------------")
+            # pprint.pprint(dir_data)
+            # print("---------------------")
 
-            # init min_price_index to the first element index
+            # init min_price_index to the first element's index
             min_price_index = 0
             for i in range(len(dir_data)):
                 if dir_data[i]['price'] < dir_data[min_price_index]['price']:
@@ -162,23 +164,16 @@ def cheap_tickets_calendar(request):
             #         min_price = dir_data[i]['price']
             #         booking_token = dir_data[i]['booking_token']
 
-            # init ticket_data with price and booking_token
+            # init ticket_data with price and booking_token and other necessary data
             ticket_data["price"] = dir_data[min_price_index]["price"]
             ticket_data["booking_token"] = dir_data[min_price_index]["booking_token"]
             ticket_data["airline"] = dir_data[min_price_index]["airlines"][0]
             ticket_data["dep_time"] = datetime.datetime.fromtimestamp(dir_data[min_price_index]["dTime"])\
                 .strftime('%d-%m-%Y %H:%M:%S')
-            print(f"price: {ticket_data['price']} // booking_token: {ticket_data['booking_token']} // "
-                  f"airline: {ticket_data['airline']}")
-
-            # check founded ticket for validation
-            pnum = 1
-
-            cr = requests.get(
-                f"{settings.BASE_URL}/api/v0.1/check_flights?v=2&booking_token={ticket_data['booking_token']}"
-                f"&bnum={pnum}&"
-                f"pnum={pnum}&affily={settings.PARTNER}_kz&currency=KZT&adults=1&children=0&"
-                f"infants=0").json()
+            ticket_data["arr_time"] = datetime.datetime.fromtimestamp(dir_data[min_price_index]["aTime"]) \
+                .strftime('%d-%m-%Y %H:%M:%S')
+            # print(f"price: {ticket_data['price']} // booking_token: {ticket_data['booking_token']} // "
+            #       f"airline: {ticket_data['airline']}")
 
     context = {
         'directions': DIRECTIONS,
@@ -186,3 +181,40 @@ def cheap_tickets_calendar(request):
     }
 
     return render(request, 'fly_app/index.html', context)
+
+
+def booking_flight(request):
+    """ Веб-сервис, который проверяет валидность билета по booking_token """
+
+    if request.method == 'POST':
+        # get booking_token
+        bt = request.POST.get("booking_token")
+
+        # init booking data dictionary
+        bd = {}
+
+        # check founded ticket for validation
+        while True:
+            cr = requests.get(
+                f"{settings.BASE_URL}/api/v0.1/check_flights?v=2&booking_token={bt}&bnum=0&pnum=1&"
+                f"affily={settings.PARTNER}&currency=EUR&adults=1&children=0&infants=0")
+            rd = cr.json()
+
+            if rd["flights_checked"]:
+                if rd["flights_invalid"]:
+                    print(f"Flight is invalid. flights_invalid: {rd['flights_invalid']}")
+                else:
+                    bd["airline"] = rd["flights"][0]["airline"]["Name"]
+                    bd["dep_time"] = datetime.datetime.fromtimestamp(rd["flights"][0]["dtime"])\
+                        .strftime('%d-%m-%Y %H:%M:%S')
+                    bd["arr_time"] = datetime.datetime.fromtimestamp(rd["flights"][0]["atime"]) \
+                        .strftime('%d-%m-%Y %H:%M:%S')
+                    bd["total"] = rd["total"]
+                    bd["price_change"] = rd["price_change"]
+                break
+            time.sleep(30)
+
+        context = {
+            "bd": bd
+        }
+        return render(request, 'fly_app/booking.html', context)

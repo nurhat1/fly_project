@@ -47,27 +47,32 @@
 
     {% if ticket_data %}
         <table class="table" style="margin-top: 50px">
-            <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Data</th>
-                <th scope="col">Price</th>
-                <th scope="col">Airline</th>
-                <th scope="col">Booking token</th>
-            </tr>
-            </thead>
             <tbody>
             <tr>
-                <th scope="row">{{ forloop.counter }}</th>
-                <td>{{ ticket_data.dep_time }}</td>
-                <td>{{ ticket_data.price }} tg</td>
                 <td>{{ ticket_data.airline }}</td>
-                <td>{{ ticket_data.booking_token | truncatechars:7 }}</td>
+                <td>{{ ticket_data.dep_time }}</td>
+                <td>Interval</td>
+                <td>{{ ticket_data.arr_time }}</td>
+                <td>{{ ticket_data.price }} tg</td>
+                <td>{{ ticket_data.booking_token | truncatechars:12 }}</td>
+                <td>
+                    <form action="{% url 'booking_flight' %}" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" class="form-control mb-2 mr-sm-2" id="booking_token" name="booking_token"
+                               value="{{ ticket_data.booking_token }}">
+
+                        <button type="submit" class="btn btn-primary mb-2">Booking</button>
+                    </form>
+                </td>
             </tr>
             </tbody>
         </table>
     {% endif %}
 
+    <br>
+    <hr>
+    <br>
+    <hr>
     {% if found_ticket %}
         <div class="card" style="width: 25rem; margin: 50px 0">
             <div class="card-header">
