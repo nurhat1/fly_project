@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/home/nurhat/Programming/django/fly_project/venv"
+VIRTUAL_ENV="/home/nurhat/Programming/my_development/django/fly_project/venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

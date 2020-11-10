@@ -39,11 +39,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'fly_app'
+    'debug_toolbar',
+    'fly_app',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -57,8 +61,7 @@ ROOT_URLCONF = 'fly_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -105,9 +108,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '127.0.0.1:11211',
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient"
+        },
+        "KEY_PREFIX": "flight"
     }
 }
 
@@ -139,5 +146,12 @@ STATICFILES_DIRS = [
 ]
 
 
+# KIWI SETTINGS
 BASE_URL = 'https://api.skypicker.com'
 PARTNER = 'nurhatmyapp'
+
+
+# DEBUG-TOOLBAR SETTINGS
+INTERNAL_IPS = [
+    '127.0.0.1',
+]

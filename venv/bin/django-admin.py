@@ -1,4 +1,4 @@
-#!/home/nurhat/Programming/django/fly_project/venv/bin/python
+#!/home/nurhat/Programming/my_development/django/fly_project/venv/bin/python3
 # When the django-admin.py deprecation ends, remove this script.
 import warnings
 

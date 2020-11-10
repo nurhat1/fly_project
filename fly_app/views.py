@@ -4,16 +4,16 @@ from django.views.decorators.cache import cache_page
 
 import datetime
 import requests
+import pprint
 
 # Create your views here.
 
 
-DIRECTIONS = ['ALA - TSE', 'TSE - ALA', 'ALA - MOW', 'MOW - ALA', 'ALA - CIT', 'CIT - ALA', 'TSE - MOW',
-              'MOW - TSE', 'TSE - LED', 'LED - TSE']
+DIRECTIONS = ['ALA', 'TSE', 'MOW', 'CIT', 'LED']
 
 HEADERS = {
-            'Content-Type': 'application/json'
-        }
+    'Content-Type': 'application/json'
+}
 
 
 def check_booking(booking_token, adults, children, infants):
@@ -117,6 +117,72 @@ def home(request):
         'directions_table': directions_table,
         'found_ticket': found_ticket,
         'answer': answer
+    }
+
+    return render(request, 'fly_app/index.html', context)
+
+
+def cheap_tickets_calendar(request):
+
+    # dictionary that will have all necessary data to show to the users
+    ticket_data = {}
+
+    if request.GET.get("fly_from") and request.GET.get("fly_to"):
+
+        # init current day and second date with a difference of 30 days
+        date_from = datetime.date.today().strftime('%d/%m/%Y')
+        date_to = (datetime.date.today() + datetime.timedelta(days=1)).strftime('%d/%m/%Y')
+
+        # get user inputs
+        fly_from = request.GET.get("fly_from")
+        fly_to = request.GET.get("fly_to")
+        print(f"fly_from: {fly_from} // fly_to: {fly_to}")
+
+        # make GET request to the service to get prices data
+        r = requests.get(f'{settings.BASE_URL}/flights?fly_from={fly_from}&fly_to={fly_to}&date_from={date_from}'
+                         f'&date_to={date_to}&adults=1&partner={settings.PARTNER}&curr=KZT', headers=HEADERS)
+
+        if r.status_code == 200:
+            # get data from response
+            dir_data = r.json()['data']
+            print("--------- dir_data ------------")
+            pprint.pprint(dir_data)
+            print("---------------------")
+
+            # init min_price_index to the first element index
+            min_price_index = 0
+            for i in range(len(dir_data)):
+                if dir_data[i]['price'] < dir_data[min_price_index]['price']:
+                    min_price_index = i
+
+            # min_price = dir_data[0]['price']
+            # booking_token = dir_data[0]['booking_token']
+            # for i in range(len(dir_data)):
+            #     if dir_data[i]['price'] < min_price:
+            #         min_price = dir_data[i]['price']
+            #         booking_token = dir_data[i]['booking_token']
+
+            # init ticket_data with price and booking_token
+            ticket_data["price"] = dir_data[min_price_index]["price"]
+            ticket_data["booking_token"] = dir_data[min_price_index]["booking_token"]
+            ticket_data["airline"] = dir_data[min_price_index]["airlines"][0]
+            ticket_data["dep_time"] = datetime.datetime.fromtimestamp(dir_data[min_price_index]["dTime"])\
+                .strftime('%d-%m-%Y %H:%M:%S')
+            print(f"price: {ticket_data['price']} // booking_token: {ticket_data['booking_token']} // "
+                  f"airline: {ticket_data['airline']}")
+
+            # check founded ticket for validation
+            pnum = 1
+
+            cr = requests.get(
+                f"{settings.BASE_URL}/api/v0.1/check_flights?v=2&booking_token={ticket_data['booking_token']}"
+                f"&bnum={pnum}&"
+                f"pnum={pnum}&affily={settings.PARTNER}_kz&currency=KZT&adults=1&children=0&"
+                f"infants=0").json()
+
+    context = {
+        'directions': DIRECTIONS,
+        'ticket_data': ticket_data,
     }
 
     return render(request, 'fly_app/index.html', context)

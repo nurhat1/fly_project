@@ -1,4 +1,4 @@
-#!/home/nurhat/Programming/django/fly_project/venv/bin/python
+#!/home/nurhat/Programming/my_development/django/fly_project/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
