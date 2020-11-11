@@ -33,17 +33,14 @@ def cheap_tickets_calendar(request):
         # get user inputs
         fly_from = request.GET.get("fly_from")
         fly_to = request.GET.get("fly_to")
-        print(f"fly_from: {fly_from} // fly_to: {fly_to}")
-
         direction = f"{fly_from}-{fly_to}"
+
         if direction in DIRS:
             # get data from Redis cache
             try:
                 dir_data = pickle.loads(redis_cli.get(direction))
                 new_ticket_data = dir_data["ticket_data"]
                 min_price = dir_data["min_price"]
-                print("----------- SUCCESS READ FROM REDIS -----------")
-                print(f"min_price: {min_price}")
             except:
                 err = sys.exc_info()
                 print(f"Error occurs when get tickets data from redis! {err[-1].tb_lineno, err}")

@@ -27,12 +27,9 @@ def init_cache():
     date_to = (datetime.date.today() + datetime.timedelta(days=30)).strftime('%d/%m/%Y')
 
     for direction in DIRECTIONS:
-        print("----------------------------------------------------")
-        print(f"direction: {direction}")
         new_ticket_data = []
         fly_from = direction.split('-')[0]
         fly_to = direction.split('-')[1]
-        print(f"fly_from: {fly_from} // fly_to: {fly_to}")
 
         # make GET request to the service to get prices data
         r = requests.get(f'{settings.BASE_URL}/flights?fly_from={fly_from}&fly_to={fly_to}&date_from={date_from}'
@@ -65,10 +62,10 @@ def init_cache():
                     })
                 cd = cd + datetime.timedelta(days=1)
 
-            print("-------- min price -----------")
+            # min price from all data
             min_price = dir_data[min_i]['price']
-            print(min_price)
-            print("-------------------------------")
+
+            # init data to save to Redis
             red_d = {
                 "min_price": min_price,
                 "ticket_data": new_ticket_data
@@ -79,7 +76,6 @@ def init_cache():
                 # delete from Redis old tickets data
                 try:
                     redis_cli.delete(direction)
-                    print(f"Deleted cache from {direction} key")
                 except:
                     err = sys.exc_info()
                     print(f"Error occurs when delete old tickets data from redis! {err[-1].tb_lineno, err}")
@@ -87,7 +83,6 @@ def init_cache():
                 # write to Redis
                 try:
                     redis_cli.set(direction, pickle.dumps(red_d))
-                    print(f"wrote new data to cache to key: {direction}")
                 except:
                     err = sys.exc_info()
                     print(f"Error occurs when write tickets data to redis! {err[-1].tb_lineno, err}")
