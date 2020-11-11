@@ -10,6 +10,14 @@
     width: 30%;
 }
 
+.search_form{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    margin: 20px auto 0;
+}
+
 .book_valid{
     background: green;
     padding: 5px;
@@ -18,4 +26,8 @@
 .book_invalid{
     background: red;
     padding: 5px;
+}
+
+.cheap_price{
+    background: green;
 }

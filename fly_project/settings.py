@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 from pathlib import Path
 import os
+from celery import Celery
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -155,3 +157,20 @@ PARTNER = 'nurhatmyapp'
 INTERNAL_IPS = [
     '127.0.0.1',
 ]
+
+
+# REDIS SETTINGS
+REDIS_HOST = 'localhost'
+REDIS_PORT = '6379'
+
+
+# CELERY SETTINGS
+CELERY_BROKER_URL = "redis://localhost:6379"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_BEAT_SCHEDULE = {
+    'update_cache': {
+        'task': 'fly_app.tasks.init_cache',
+        'schedule': crontab(minute="0", hour="0", day_of_month="*"),
+    },
+}
