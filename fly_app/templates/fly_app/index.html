@@ -102,7 +102,7 @@
 
 
     <hr>
-    {% if ticket_data %}
+    {% if new_ticket_data %}
         <h3>Ticket prices per month for {{ fly_from }} - {{ fly_to }} direction (adult=1)</h3>
         <table class="table" style="margin-top: 50px">
             <thead>
@@ -116,7 +116,7 @@
             </tr>
             </thead>
             <tbody>
-            {% for flight in ticket_data %}
+            {% for flight in new_ticket_data %}
                 <tr>
                     <td>{{ flight.airline }}</td>
                     <td>{{ flight.dep_time }}</td>

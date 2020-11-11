@@ -128,6 +128,7 @@ def cheap_tickets_calendar(request):
 
     # dictionary that will have all necessary data to show to the users
     ticket_data = []
+    new_ticket_data = []
     min_ticket_data = {}
     fly_from, fly_to = (None, None)
 
@@ -135,7 +136,7 @@ def cheap_tickets_calendar(request):
 
         # init current day and second date with a difference of 30 days
         date_from = datetime.date.today().strftime('%d/%m/%Y')
-        date_to = (datetime.date.today() + datetime.timedelta(days=5)).strftime('%d/%m/%Y')
+        date_to = (datetime.date.today() + datetime.timedelta(days=30)).strftime('%d/%m/%Y')
 
         # get user inputs
         fly_from = request.GET.get("fly_from")
@@ -150,30 +151,66 @@ def cheap_tickets_calendar(request):
             # get data from response
             dir_data = r.json()['data']
             print("--------- dir_data ------------")
+            for i in range(len(dir_data)):
+                print(f"date: {datetime.datetime.fromtimestamp(dir_data[i]['dTime']).date()}")
+
+            # --------------------------------------
+            cd = datetime.date.today()
+            min_mpdi = 0
+            for i in range(31):
+                mpdi = None
+                for j in range(len(dir_data)):
+                    if datetime.datetime.fromtimestamp(dir_data[j]["dTime"]).date() == cd:
+                        # print(datetime.datetime.fromtimestamp(dir_data[j]["dTime"]).date(), cd)
+                        # print(dir_data[j]["price"])
+                        if mpdi is None:
+                            mpdi = j
+                        if dir_data[j]['price'] < dir_data[mpdi]['price']:
+                            mpdi = j
+                        if dir_data[mpdi]['price'] < dir_data[min_mpdi]['price']:
+                            min_mpdi = j
+                print("----------------------", mpdi)
+                if mpdi is not None:
+                    new_ticket_data.append({
+                        "price": dir_data[mpdi]["price"],
+                        "booking_token": dir_data[mpdi]["booking_token"],
+                        "airline": dir_data[mpdi]["airlines"][0],
+                        "dep_time": datetime.datetime.fromtimestamp(dir_data[mpdi]["dTime"]).strftime('%d-%m-%Y %H:%M:%S'),
+                        "duration": dir_data[mpdi]["fly_duration"],
+                        "arr_time": datetime.datetime.fromtimestamp(dir_data[mpdi]["aTime"]).strftime('%d-%m-%Y %H:%M:%S'),
+                    })
+                cd = cd + datetime.timedelta(days=1)
+
+            print("-------- min price -----------")
+            print(dir_data[min_mpdi]['price'])
+            print("-------------------------------")
+            # print("-------- new ticket data -----------")
+            # print(new_ticket_data)
+            # print("-------------------------------")
 
             # init min_price_index to the first element's index
-            min_price_index = 0
-            for i in range(len(dir_data)):
-                ticket_data.append({
-                    "price": dir_data[i]["price"],
-                    "booking_token": dir_data[i]["booking_token"],
-                    "airline": dir_data[i]["airlines"][0],
-                    "dep_time": datetime.datetime.fromtimestamp(dir_data[i]["dTime"]).strftime('%d-%m-%Y %H:%M:%S'),
-                    "duration": dir_data[i]["fly_duration"],
-                    "arr_time": datetime.datetime.fromtimestamp(dir_data[i]["aTime"]).strftime('%d-%m-%Y %H:%M:%S'),
-                })
-                if dir_data[i]['price'] < dir_data[min_price_index]['price']:
-                    min_price_index = i
+            # min_price_index = 0
+            # for i in range(len(dir_data)):
+            #     ticket_data.append({
+            #         "price": dir_data[i]["price"],
+            #         "booking_token": dir_data[i]["booking_token"],
+            #         "airline": dir_data[i]["airlines"][0],
+            #         "dep_time": datetime.datetime.fromtimestamp(dir_data[i]["dTime"]).strftime('%d-%m-%Y %H:%M:%S'),
+            #         "duration": dir_data[i]["fly_duration"],
+            #         "arr_time": datetime.datetime.fromtimestamp(dir_data[i]["aTime"]).strftime('%d-%m-%Y %H:%M:%S'),
+            #     })
+            #     if dir_data[i]['price'] < dir_data[min_price_index]['price']:
+            #         min_price_index = i
 
             # pprint.pprint(dir_data[min_price_index])
             # init ticket_data with price and booking_token and other necessary data
-            min_ticket_data["price"] = dir_data[min_price_index]["price"]
-            min_ticket_data["booking_token"] = dir_data[min_price_index]["booking_token"]
-            min_ticket_data["airline"] = dir_data[min_price_index]["airlines"][0]
-            min_ticket_data["dep_time"] = datetime.datetime.fromtimestamp(dir_data[min_price_index]["dTime"])\
+            min_ticket_data["price"] = dir_data[min_mpdi]["price"]
+            min_ticket_data["booking_token"] = dir_data[min_mpdi]["booking_token"]
+            min_ticket_data["airline"] = dir_data[min_mpdi]["airlines"][0]
+            min_ticket_data["dep_time"] = datetime.datetime.fromtimestamp(dir_data[min_mpdi]["dTime"])\
                 .strftime('%d-%m-%Y %H:%M:%S')
-            min_ticket_data["duration"] = dir_data[min_price_index]["fly_duration"]
-            min_ticket_data["arr_time"] = datetime.datetime.fromtimestamp(dir_data[min_price_index]["aTime"]) \
+            min_ticket_data["duration"] = dir_data[min_mpdi]["fly_duration"]
+            min_ticket_data["arr_time"] = datetime.datetime.fromtimestamp(dir_data[min_mpdi]["aTime"]) \
                 .strftime('%d-%m-%Y %H:%M:%S')
             # print(f"price: {ticket_data['price']} // booking_token: {ticket_data['booking_token']} // "
             #       f"airline: {ticket_data['airline']}")
@@ -183,6 +220,7 @@ def cheap_tickets_calendar(request):
         'fly_from': fly_from,
         'fly_to': fly_to,
         'ticket_data': ticket_data,
+        'new_ticket_data': new_ticket_data,
         'min_ticket_data': min_ticket_data
     }
 
