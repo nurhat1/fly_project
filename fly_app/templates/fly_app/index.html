@@ -2,17 +2,17 @@
 {% load static %}
 
 {% block content %}
-<h2>Index page</h2>
-    <h3>Choose a direction and passengers:</h3>
+<h2>Low Price Calendar</h2>
+    <h4 class="mt-3">Choose a direction to find the most cheap flight:</h4>
 
-    <form class="top_form" action="" method="get">
+    <form class="top_form mt-3" action="" method="get">
         {#     {% csrf_token %}#}
 
         <div class="form-group">
             <label for="exampleFormControlSelect1">Fly from</label>
-            <select class="form-control" id="exampleFormControlSelect1" name="fly_from">
+            <select class="form-control" id="exampleFormControlSelect1" name="fly_from" {% if fly_from %}value="{{ fly_from }}"{% endif %}>
                 {% for direction in directions %}
-                    <option>{{ direction }}</option>
+                    <option {% if fly_from == direction %}selected{% endif %}>{{ direction }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -21,7 +21,7 @@
             <label for="exampleFormControlSelect1">Fly to</label>
             <select class="form-control" id="exampleFormControlSelect1" name="fly_to">
                 {% for direction in directions %}
-                    <option>{{ direction }}</option>
+                    <option {% if fly_to == direction %}selected{% endif %}>{{ direction }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -41,25 +41,36 @@
         {#            <input type="number" class="form-control" id="infants_count" placeholder="Enter infants count" name="infants_count" value="0">#}
         {#        </div>#}
 
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btn btn-primary">Search</button>
 
     </form>
 
-    {% if ticket_data %}
-        <table class="table" style="margin-top: 50px">
+    {% if min_ticket_data %}
+        <h3 class="mt-5">The most cheap flight for {{ fly_from }} - {{ fly_to }} direction</h3>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Airline</th>
+                <th scope="col">Departure time</th>
+                <th scope="col">Flight duration</th>
+                <th scope="col">Arrival time</th>
+                <th scope="col">Flight price</th>
+                <th scope="col">#</th>
+            </tr>
+            </thead>
             <tbody>
             <tr>
-                <td>{{ ticket_data.airline }}</td>
-                <td>{{ ticket_data.dep_time }}</td>
-                <td>Interval</td>
-                <td>{{ ticket_data.arr_time }}</td>
-                <td>{{ ticket_data.price }} tg</td>
-                <td>{{ ticket_data.booking_token | truncatechars:12 }}</td>
+                <td>{{ min_ticket_data.airline }}</td>
+                <td>{{ min_ticket_data.dep_time }}</td>
+                <td>{{ min_ticket_data.duration }}</td>
+                <td>{{ min_ticket_data.arr_time }}</td>
+                <td>{{ min_ticket_data.price }} tg</td>
+                <td>{{ min_ticket_data.booking_token | truncatechars:12 }}</td>
                 <td>
                     <form action="{% url 'booking_flight' %}" method="post">
                         {% csrf_token %}
                         <input type="hidden" class="form-control mb-2 mr-sm-2" id="booking_token" name="booking_token"
-                               value="{{ ticket_data.booking_token }}">
+                               value="{{ min_ticket_data.booking_token }}">
 
                         <button type="submit" class="btn btn-primary mb-2">Booking</button>
                     </form>
@@ -73,42 +84,60 @@
     <hr>
     <br>
     <hr>
-    {% if found_ticket %}
-        <div class="card" style="width: 25rem; margin: 50px 0">
-            <div class="card-header">
-                Found ticket:
-            </div>
-            <div class="card-body">
-                <h5 class="card-title">Direction: {{ found_ticket.cityFrom }} - {{ found_ticket.cityTo }}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">Duration: {{ found_ticket.fly_duration }}</h6>
-                <p class="card-text">Price: {{ found_ticket.price }}tg</p>
-                <p class="card-text">Time: {{ found_ticket.time }}</p>
-                <p class="card-text">Booking: {{ answer }}</p>
-            </div>
-        </div>
-    {% endif %}
+{#    {% if ticket_data %}#}
+{#        <div class="card" style="width: 25rem; margin: 50px 0">#}
+{#            <div class="card-header">#}
+{#                Found ticket:#}
+{#            </div>#}
+{#            <div class="card-body">#}
+{#                <h5 class="card-title">Direction: {{ found_ticket.cityFrom }} - {{ found_ticket.cityTo }}</h5>#}
+{#                <h6 class="card-subtitle mb-2 text-muted">Duration: {{ found_ticket.fly_duration }}</h6>#}
+{#                <p class="card-text">Price: {{ found_ticket.price }}tg</p>#}
+{#                <p class="card-text">Time: {{ found_ticket.time }}</p>#}
+{#                <p class="card-text">Booking: {{ answer }}</p>#}
+{#            </div>#}
+{#        </div>#}
+{#    {% endif %}#}
 
 
 
     <hr>
-    <h3>Directions: 10 directions with minimal price (adult=1)</h3>
-    <table class="table" style="margin-top: 50px">
-        <thead>
-        <tr>
-            <th scope="col">#</th>
-            <th scope="col">Direction</th>
-            <th scope="col">Price</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for direction in directions_table %}
+    {% if ticket_data %}
+        <h3>Ticket prices per month for {{ fly_from }} - {{ fly_to }} direction (adult=1)</h3>
+        <table class="table" style="margin-top: 50px">
+            <thead>
             <tr>
-                <th scope="row">{{ forloop.counter }}</th>
-                <td>{{ direction.direction }}</td>
-                <td>{{ direction.price }}tg</td>
+                <th scope="col">Airline</th>
+                <th scope="col">Departure time</th>
+                <th scope="col">Flight duration</th>
+                <th scope="col">Arrival time</th>
+                <th scope="col">Flight price</th>
+                <th scope="col">#</th>
             </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+            {% for flight in ticket_data %}
+                <tr>
+                    <td>{{ flight.airline }}</td>
+                    <td>{{ flight.dep_time }}</td>
+                    <td>{{ flight.duration }}</td>
+                    <td>{{ flight.arr_time }}</td>
+                    <td>{{ flight.price }} tg</td>
+                    <td>{{ flight.booking_token | truncatechars:12 }}</td>
+                    <td>
+                        <form action="{% url 'booking_flight' %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" class="form-control mb-2 mr-sm-2" id="booking_token"
+                                   name="booking_token"
+                                   value="{{ flight.booking_token }}">
+
+                            <button type="submit" class="btn btn-primary mb-2">Booking</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 
 {% endblock %}

@@ -127,13 +127,15 @@ def cheap_tickets_calendar(request):
     """ Веб-сервис, который выводит самый дешевый билет за текущий месяц по заданному направлению """
 
     # dictionary that will have all necessary data to show to the users
-    ticket_data = {}
+    ticket_data = []
+    min_ticket_data = {}
+    fly_from, fly_to = (None, None)
 
     if request.GET.get("fly_from") and request.GET.get("fly_to"):
 
         # init current day and second date with a difference of 30 days
         date_from = datetime.date.today().strftime('%d/%m/%Y')
-        date_to = (datetime.date.today() + datetime.timedelta(days=1)).strftime('%d/%m/%Y')
+        date_to = (datetime.date.today() + datetime.timedelta(days=5)).strftime('%d/%m/%Y')
 
         # get user inputs
         fly_from = request.GET.get("fly_from")
@@ -147,37 +149,41 @@ def cheap_tickets_calendar(request):
         if r.status_code == 200:
             # get data from response
             dir_data = r.json()['data']
-            # print("--------- dir_data ------------")
-            # pprint.pprint(dir_data)
-            # print("---------------------")
+            print("--------- dir_data ------------")
 
             # init min_price_index to the first element's index
             min_price_index = 0
             for i in range(len(dir_data)):
+                ticket_data.append({
+                    "price": dir_data[i]["price"],
+                    "booking_token": dir_data[i]["booking_token"],
+                    "airline": dir_data[i]["airlines"][0],
+                    "dep_time": datetime.datetime.fromtimestamp(dir_data[i]["dTime"]).strftime('%d-%m-%Y %H:%M:%S'),
+                    "duration": dir_data[i]["fly_duration"],
+                    "arr_time": datetime.datetime.fromtimestamp(dir_data[i]["aTime"]).strftime('%d-%m-%Y %H:%M:%S'),
+                })
                 if dir_data[i]['price'] < dir_data[min_price_index]['price']:
                     min_price_index = i
 
-            # min_price = dir_data[0]['price']
-            # booking_token = dir_data[0]['booking_token']
-            # for i in range(len(dir_data)):
-            #     if dir_data[i]['price'] < min_price:
-            #         min_price = dir_data[i]['price']
-            #         booking_token = dir_data[i]['booking_token']
-
+            # pprint.pprint(dir_data[min_price_index])
             # init ticket_data with price and booking_token and other necessary data
-            ticket_data["price"] = dir_data[min_price_index]["price"]
-            ticket_data["booking_token"] = dir_data[min_price_index]["booking_token"]
-            ticket_data["airline"] = dir_data[min_price_index]["airlines"][0]
-            ticket_data["dep_time"] = datetime.datetime.fromtimestamp(dir_data[min_price_index]["dTime"])\
+            min_ticket_data["price"] = dir_data[min_price_index]["price"]
+            min_ticket_data["booking_token"] = dir_data[min_price_index]["booking_token"]
+            min_ticket_data["airline"] = dir_data[min_price_index]["airlines"][0]
+            min_ticket_data["dep_time"] = datetime.datetime.fromtimestamp(dir_data[min_price_index]["dTime"])\
                 .strftime('%d-%m-%Y %H:%M:%S')
-            ticket_data["arr_time"] = datetime.datetime.fromtimestamp(dir_data[min_price_index]["aTime"]) \
+            min_ticket_data["duration"] = dir_data[min_price_index]["fly_duration"]
+            min_ticket_data["arr_time"] = datetime.datetime.fromtimestamp(dir_data[min_price_index]["aTime"]) \
                 .strftime('%d-%m-%Y %H:%M:%S')
             # print(f"price: {ticket_data['price']} // booking_token: {ticket_data['booking_token']} // "
             #       f"airline: {ticket_data['airline']}")
 
     context = {
         'directions': DIRECTIONS,
+        'fly_from': fly_from,
+        'fly_to': fly_to,
         'ticket_data': ticket_data,
+        'min_ticket_data': min_ticket_data
     }
 
     return render(request, 'fly_app/index.html', context)
@@ -209,6 +215,8 @@ def booking_flight(request):
                         .strftime('%d-%m-%Y %H:%M:%S')
                     bd["arr_time"] = datetime.datetime.fromtimestamp(rd["flights"][0]["atime"]) \
                         .strftime('%d-%m-%Y %H:%M:%S')
+                    bd["duration"] = datetime.datetime.fromtimestamp(rd["flights"][0]["atime"]) - datetime.datetime.\
+                        fromtimestamp(rd["flights"][0]["dtime"])
                     bd["total"] = rd["total"]
                     bd["price_change"] = rd["price_change"]
                 break

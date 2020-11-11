@@ -2,4 +2,20 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 70%;
+    margin: 20px auto 0;
+}
+
+.top_form .form-group, .top_form .btn{
+    width: 30%;
+}
+
+.book_valid{
+    background: green;
+    padding: 5px;
+}
+
+.book_invalid{
+    background: red;
+    padding: 5px;
 }
