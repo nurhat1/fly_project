@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.conf import settings
+from django.contrib import messages
 
 import time
 from redis import Redis
@@ -13,6 +14,7 @@ import datetime
 
 redis_cli = Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
 
+DIRS = ['ALA-TSE', 'TSE-ALA', 'ALA-MOW', 'MOW-ALA', 'ALA-CIT', 'CIT-ALA', 'TSE-MOW', 'MOW-TSE', 'TSE-LED', 'LED-TSE']
 DIRECTIONS = ['ALA', 'TSE', 'MOW', 'CIT', 'LED']
 
 HEADERS = {
@@ -33,17 +35,21 @@ def cheap_tickets_calendar(request):
         fly_to = request.GET.get("fly_to")
         print(f"fly_from: {fly_from} // fly_to: {fly_to}")
 
-        # get data from Redis cache
-        try:
-            direction = f"{fly_from}-{fly_to}"
-            dir_data = pickle.loads(redis_cli.get(direction))
-            new_ticket_data = dir_data["ticket_data"]
-            min_price = dir_data["min_price"]
-            print("----------- SUCCESS READ FROM REDIS -----------")
-            print(f"min_price: {min_price}")
-        except:
-            err = sys.exc_info()
-            print(f"Error occurs when get tickets data from redis! {err[-1].tb_lineno, err}")
+        direction = f"{fly_from}-{fly_to}"
+        if direction in DIRS:
+            # get data from Redis cache
+            try:
+                dir_data = pickle.loads(redis_cli.get(direction))
+                new_ticket_data = dir_data["ticket_data"]
+                min_price = dir_data["min_price"]
+                print("----------- SUCCESS READ FROM REDIS -----------")
+                print(f"min_price: {min_price}")
+            except:
+                err = sys.exc_info()
+                print(f"Error occurs when get tickets data from redis! {err[-1].tb_lineno, err}")
+                messages.warning(request, 'Can not find tickets. Please try later.')
+        else:
+            messages.warning(request, 'Please choose valid direction.')
 
     context = {
         'directions': DIRECTIONS,
